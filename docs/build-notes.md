@@ -28,3 +28,34 @@
 - Resources are distributed across two Availability Zones.
 - Public and private workloads are separated into dedicated subnets.
 - A NAT Gateway was intentionally omitted at this stage to minimize lab costs.
+
+
+## Phase 2 - Secure Compute and Administration
+
+### Compute
+- Provisioned an Amazon EC2 instance using Terraform.
+- Deployed Amazon Linux 2023 on a `t3.micro` instance.
+- Retrieved the current Amazon Linux AMI dynamically from AWS Systems Manager Parameter Store.
+- Enforced IMDSv2 for EC2 instance metadata access.
+
+### IAM
+- Created a dedicated IAM role for the EC2 workload.
+- Attached `AmazonSSMManagedInstanceCore`.
+- Associated the role with EC2 through an IAM instance profile.
+- Avoided embedding AWS credentials or access keys on the instance.
+
+### Network Security
+- Created a dedicated application security group.
+- Configured zero inbound security group rules.
+- Did not expose SSH (TCP/22) to the Internet.
+- Allowed outbound connectivity for required AWS service communication.
+
+### Secure Administration
+- Configured AWS Systems Manager Session Manager for administrative access.
+- Successfully established an interactive shell without SSH.
+- No SSH key pair is required for instance administration.
+
+### Security Decisions
+- Eliminated public SSH exposure to reduce the remote administration attack surface.
+- Used IAM-based Session Manager access instead of long-lived SSH credentials.
+- Required IMDSv2 to improve protection of instance metadata credentials.
