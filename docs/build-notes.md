@@ -691,3 +691,85 @@ Combined with GuardDuty, the environment now contains centralized audit logging,
 The most important result from this phase was verifying the complete notification chain rather than only confirming that the individual AWS resources existed.
 
 The next phase will add AWS WAF to the application architecture so the project includes preventive controls at the public web layer in addition to its existing detection and monitoring controls.
+
+---
+
+# Phase 7 - Web Application Firewall Protection
+
+## WAF Deployment
+
+Added AWS WAF to provide an additional security layer in front of the public application entry point.
+
+Created a regional AWS WAF Web ACL using Terraform and associated it with the existing Application Load Balancer.
+
+The protected application path is now:
+
+Internet → AWS WAF → Application Load Balancer → Private EC2 Instances
+
+This allows HTTP requests to be inspected against security rules before they are forwarded through the load balancer to the private application tier.
+
+## AWS Managed Rules
+
+Configured the Web ACL with two AWS managed rule groups:
+
+* AWSManagedRulesCommonRuleSet
+* AWSManagedRulesKnownBadInputsRuleSet
+
+The Common Rule Set provides general protection against common web application attack patterns and suspicious requests.
+
+The Known Bad Inputs rule set adds protection against request patterns that AWS identifies as commonly associated with exploitation attempts or malicious input.
+
+Using AWS managed rule groups provides a maintained baseline of application-layer protection without requiring every detection rule to be created manually.
+
+## Web ACL Behavior
+
+Configured the Web ACL with a default action of Allow.
+
+Requests that do not match a blocking rule are therefore permitted to continue to the Application Load Balancer. Requests that match protections within the managed rule groups can be handled according to the AWS-managed rule actions.
+
+This approach preserves normal application availability while applying security inspection to incoming traffic.
+
+## Load Balancer Integration
+
+Associated the Web ACL directly with the internet-facing Application Load Balancer.
+
+The private EC2 instances remain inaccessible directly from the internet. WAF protects the public application entry point, while the existing security group design continues to restrict backend HTTP traffic to traffic originating from the ALB.
+
+This creates multiple layers of network and application protection:
+
+Internet → WAF inspection → ALB → Application Security Group → Private EC2
+
+## Monitoring and Visibility
+
+Enabled CloudWatch metrics and sampled requests for the Web ACL and its managed rule groups.
+
+This provides visibility into WAF activity and creates a foundation for reviewing how incoming requests are evaluated by the configured protections.
+
+## Design Decisions
+
+* Used a regional Web ACL because the protected resource is an Application Load Balancer.
+* Used AWS managed rule groups instead of manually maintaining a large collection of individual WAF rules.
+* Applied WAF at the public ALB rather than directly exposing or modifying the private application servers.
+* Retained the existing ALB and application security group separation so WAF complements the network controls rather than replacing them.
+* Managed both the Web ACL and ALB association through Terraform so the security control remains part of the infrastructure-as-code configuration.
+
+## Phase 7 Validation
+
+Successfully verified:
+
+* The regional Web ACL was created through Terraform.
+* The Web ACL is associated with the application load balancer.
+* The Web ACL default action is Allow.
+* AWSManagedRulesCommonRuleSet is enabled.
+* AWSManagedRulesKnownBadInputsRuleSet is enabled.
+* CloudWatch metrics are enabled for WAF visibility.
+* Sampled requests are enabled.
+* The private application instances remain behind the Application Load Balancer.
+
+## Phase 7 Outcome
+
+The public application entry point now has application-layer filtering in addition to the network controls established in earlier phases.
+
+The security model has progressed from relying only on network segmentation and security groups to inspecting web requests before they reach the application infrastructure.
+
+AWS WAF is managed through Terraform and attached directly to the Application Load Balancer, keeping the protection reproducible and version controlled.

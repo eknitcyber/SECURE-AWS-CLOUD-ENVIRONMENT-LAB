@@ -36,3 +36,10 @@ module "monitoring" {
 
   security_alert_email = var.security_alert_email
 }
+
+module "security" {
+  source = "../../modules/security"
+
+  project_name = "secure-aws-terraform-lab"
+  alb_arn      = module.compute.alb_arn
+}
