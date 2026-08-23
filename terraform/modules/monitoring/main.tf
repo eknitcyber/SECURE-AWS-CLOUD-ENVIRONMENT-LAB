@@ -164,6 +164,7 @@ resource "aws_cloudwatch_log_metric_filter" "unauthorized_api_calls" {
 resource "aws_cloudwatch_metric_alarm" "unauthorized_api_calls" {
   alarm_name          = "${var.project_name}-unauthorized-api-calls"
   alarm_description   = "Alarm when unauthorized AWS API calls are detected"
+  alarm_actions = [aws_sns_topic.security_alerts.arn]
   namespace           = "SecurityMetrics"
   metric_name         = "UnauthorizedAPICalls"
   statistic           = "Sum"
@@ -176,4 +177,26 @@ resource "aws_cloudwatch_metric_alarm" "unauthorized_api_calls" {
   tags = {
     Name = "${var.project_name}-unauthorized-api-calls"
   }
+}
+
+resource "aws_guardduty_detector" "main" {
+  enable = true
+
+  tags = {
+    Name = "${var.project_name}-guardduty"
+  }
+}
+
+resource "aws_sns_topic" "security_alerts" {
+  name = "${var.project_name}-security-alerts"
+
+  tags = {
+    Name = "${var.project_name}-security-alerts"
+  }
+}
+
+resource "aws_sns_topic_subscription" "security_email" {
+  topic_arn = aws_sns_topic.security_alerts.arn
+  protocol  = "email"
+  endpoint  = var.security_alert_email
 }

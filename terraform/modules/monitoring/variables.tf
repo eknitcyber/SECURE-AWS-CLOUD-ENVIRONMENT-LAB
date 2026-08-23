@@ -5,3 +5,7 @@ variable "project_name" {
 variable "aws_region" {
   type = string
 }
+
+variable "security_alert_email" {
+  type = string
+}

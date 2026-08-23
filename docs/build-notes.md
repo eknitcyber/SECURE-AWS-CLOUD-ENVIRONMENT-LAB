@@ -489,3 +489,103 @@ AWS Activity → CloudTrail → CloudWatch Logs → Metric Filter → Alarm
 for security monitoring.
 
 This establishes the visibility needed for later threat detection, alerting, controlled security testing, and incident investigation phases of the project.
+
+---
+
+# Phase 5 - Managed Threat Detection
+
+### Threat Detection Goal
+
+Added Amazon GuardDuty as the managed threat detection layer for the AWS environment.
+
+Phase 4 established the ability to record AWS activity and detect specific events using CloudTrail, CloudWatch Logs, metric filters, and alarms. GuardDuty adds a different capability by continuously analyzing AWS data sources for activity that may indicate compromised credentials, reconnaissance, unauthorized behavior, or threats affecting AWS workloads.
+
+This extends the security architecture from collecting and monitoring activity to actively looking for suspicious patterns.
+
+### Amazon GuardDuty
+
+Enabled Amazon GuardDuty using Terraform.
+
+A GuardDuty detector was added to the existing monitoring module so threat detection remains part of the infrastructure-as-code configuration rather than being enabled manually through the AWS Console.
+
+The detector is enabled in the same AWS region as the lab environment.
+
+### Detection Approach
+
+GuardDuty provides managed threat detection without requiring custom detection rules for every possible threat.
+
+This complements the CloudWatch detection created in Phase 4.
+
+The CloudWatch metric filter monitors for a specific condition that I defined:
+
+CloudTrail → AccessDenied / UnauthorizedOperation → Metric → Alarm
+
+GuardDuty provides broader managed analysis of AWS activity and generates findings when behavior matches known indicators or suspicious patterns.
+
+Using both approaches provides two different types of visibility:
+
+* CloudWatch provides custom detection for events I specifically choose to monitor.
+* GuardDuty provides AWS-managed threat detection across supported telemetry sources.
+
+This separation helped reinforce that centralized logging and threat detection are related but are not the same security control.
+
+### Findings and Severity
+
+GuardDuty findings are categorized by severity, allowing detected activity to be prioritized for investigation.
+
+The GuardDuty dashboard provides visibility into findings across severity levels including:
+
+* Low
+* Medium
+* High
+* Critical
+
+At the time of validation, the environment had no active GuardDuty findings.
+
+This is expected for the current state of the lab. GuardDuty is enabled so future suspicious activity can be surfaced as findings rather than requiring every event to be manually identified from raw logs.
+
+### Infrastructure as Code
+
+GuardDuty was enabled through the Terraform monitoring module using an `aws_guardduty_detector` resource.
+
+Terraform deployment resulted in:
+
+1 added, 0 changed, 0 destroyed
+
+No existing network, compute, logging, or application resources needed to be modified to introduce the threat detection layer.
+
+Keeping GuardDuty in Terraform also means its enabled state is documented alongside the rest of the security architecture and can be recreated during future deployments.
+
+### Phase 5 Validation
+
+Verified that:
+
+* Amazon GuardDuty is enabled.
+* The GuardDuty detector was created through Terraform.
+* GuardDuty is actively monitoring the AWS environment.
+* The GuardDuty dashboard is available for reviewing security findings.
+* Findings can be categorized and prioritized by severity.
+* GuardDuty can be suspended or disabled from its current active state.
+* Existing infrastructure remained unchanged during deployment.
+
+### Phase 5 Outcome
+
+The environment now includes managed threat detection in addition to centralized logging and custom CloudWatch monitoring.
+
+The security visibility built so far can be viewed as:
+
+AWS Activity → CloudTrail → S3
+
+for retained audit evidence,
+
+AWS Activity → CloudTrail → CloudWatch → Metric Filter → Alarm
+
+for custom event-based detection, and
+
+AWS Telemetry → GuardDuty → Security Findings
+
+for managed threat detection.
+
+This gives the environment multiple layers of security visibility rather than relying on a single logging or detection mechanism.
+
+The next step is to add an alerting path so important security detections can be delivered outside the AWS Console for review and response.

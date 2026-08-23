@@ -33,4 +33,6 @@ module "monitoring" {
 
   project_name = "secure-aws-terraform-lab"
   aws_region   = "us-east-1"
+
+  security_alert_email = var.security_alert_email
 }
