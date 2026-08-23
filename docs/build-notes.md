@@ -546,7 +546,7 @@ This is expected for the current state of the lab. GuardDuty is enabled so futur
 
 ### Infrastructure as Code
 
-GuardDuty was enabled through the Terraform monitoring module using an `aws_guardduty_detector` resource.
+GuardDuty was enabled through the Terraform monitoring module using an aws_guardduty_detector resource.
 
 Terraform deployment resulted in:
 
@@ -589,3 +589,105 @@ for managed threat detection.
 This gives the environment multiple layers of security visibility rather than relying on a single logging or detection mechanism.
 
 The next step is to add an alerting path so important security detections can be delivered outside the AWS Console for review and response.
+
+---
+
+# Phase 6 - Security Alerting
+
+### Alerting Goal
+
+Extended the monitoring environment so security detections can generate notifications outside the AWS Console.
+
+The previous monitoring phases provided centralized logging, custom detection, CloudWatch alarms, and GuardDuty threat detection. However, an alarm that only exists inside the AWS Console still requires someone to actively check it.
+
+The goal of this phase was to create a notification path that can bring a detected event to my attention automatically.
+
+### Amazon SNS
+
+Created an Amazon SNS topic through Terraform named:
+
+secure-aws-terraform-lab-security-alerts
+
+The SNS topic acts as the notification layer between security monitoring services and the person responsible for reviewing an alert.
+
+This separates detection from notification. CloudWatch determines when the monitored condition has been met, while SNS handles delivery of the resulting alert.
+
+### CloudWatch Alarm Integration
+
+Updated the existing unauthorized API call CloudWatch alarm to use the SNS topic as an alarm action.
+
+The resulting detection and notification path is:
+
+CloudTrail → CloudWatch Logs → Metric Filter → CloudWatch Alarm → SNS → Email
+
+The alarm is configured to notify the SNS topic when it enters the ALARM state.
+
+This means activity matching the existing AccessDenied or UnauthorizedOperation detection can result in an external notification rather than remaining visible only within CloudWatch.
+
+### Email Subscription
+
+Created an email subscription to the SNS security alerts topic.
+
+The notification email address is provided to Terraform through a local terraform.tfvars file rather than being hardcoded into the Terraform module.
+
+The local variable file is excluded from Git version control. This keeps the personal email address out of the public repository while still allowing Terraform to manage the SNS subscription.
+
+The SNS email subscription was manually confirmed through the AWS confirmation email before it could receive notifications.
+
+### Alert Validation
+
+I wanted to verify the notification path itself rather than assuming that a configured SNS action meant alerts would successfully reach their destination.
+
+The CloudWatch alarm was therefore placed into the ALARM state using the AWS CLI with a clearly identified test reason:
+
+Phase 6 SNS notification test
+
+This was a controlled notification test and did not require generating malicious traffic or intentionally causing unauthorized activity in the AWS environment.
+
+The test produced the state transition:
+
+OK → ALARM
+
+CloudWatch invoked the configured SNS action and an alarm notification was successfully delivered to the confirmed email subscription.
+
+The received notification included the alarm name, state change, reason for the state change, monitored metric, threshold information, and SNS alarm action.
+
+This provided end-to-end confirmation that the alerting path was functioning.
+
+### Security Design Decisions
+
+I kept the detection and notification components separate.
+
+CloudWatch remains responsible for evaluating the security metric, while SNS provides a reusable notification channel. This design means additional alarms can later send notifications through the same security alerts topic without requiring a separate email configuration for every detection.
+
+I also avoided committing the notification email address to GitHub by passing it through a Git-ignored Terraform variable file.
+
+For testing, I changed the alarm state directly instead of creating suspicious AWS activity. This allowed the notification pipeline to be validated without weakening the environment or generating unnecessary security events.
+
+### Phase 6 Validation
+
+Verified that:
+
+* The SNS security alerts topic was created through Terraform.
+* The existing unauthorized API call alarm is connected to the SNS topic.
+* The email endpoint is subscribed to the security alerts topic.
+* The SNS subscription status is confirmed.
+* Personal email information is not stored in the public Terraform configuration.
+* CloudWatch alarm actions are enabled.
+* The alarm sends notifications to the SNS topic when entering the ALARM state.
+* A controlled alarm-state test successfully triggered SNS.
+* The resulting CloudWatch alarm notification was successfully received by email.
+
+### Phase 6 Outcome
+
+The environment now has an external notification path for security monitoring.
+
+The monitoring architecture has progressed from simply recording activity to detecting and communicating security events:
+
+AWS Activity → CloudTrail → CloudWatch → Detection → Alarm → SNS → Email
+
+Combined with GuardDuty, the environment now contains centralized audit logging, custom detection logic, managed threat detection, and external security alerting.
+
+The most important result from this phase was verifying the complete notification chain rather than only confirming that the individual AWS resources existed.
+
+The next phase will add AWS WAF to the application architecture so the project includes preventive controls at the public web layer in addition to its existing detection and monitoring controls.
