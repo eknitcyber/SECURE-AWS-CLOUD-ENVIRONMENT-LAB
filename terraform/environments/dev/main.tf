@@ -23,6 +23,7 @@ module "compute" {
 
   project_name          = "secure-aws-terraform-lab"
   vpc_id                = module.vpc.vpc_id
-  public_subnet_id      = module.vpc.public_subnet_ids[0]
+  public_subnet_ids     = module.vpc.public_subnet_ids
+  private_subnet_ids    = module.vpc.private_subnet_ids
   instance_profile_name = module.iam.instance_profile_name
 }
