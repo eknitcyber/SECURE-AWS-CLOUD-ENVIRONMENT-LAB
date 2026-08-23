@@ -2,17 +2,17 @@
 
 ## Project Goal
 
-The goal of this project is to build a security-focused AWS environment using Terraform while developing a better understanding of how cloud infrastructure, networking, access control, and security monitoring work together.
+The goal of this project was to build a security-focused AWS environment using Terraform while developing a better understanding of how cloud infrastructure, networking, access control, monitoring, threat detection, and incident response work together.
 
-The project follows this lifecycle:
+The project followed this lifecycle:
 
 BUILD → SECURE → MONITOR → TEST → DETECT → INVESTIGATE → REMEDIATE → DOCUMENT
 
-Rather than simply deploying AWS resources, I want the final environment to demonstrate why different security controls are used and how they work together.
+Rather than simply deploying AWS resources, the project was designed to demonstrate why different security controls are used and how they work together.
 
-The final architecture will use segmented networking, private application servers behind an Application Load Balancer, IAM-based administration, centralized logging and monitoring, threat detection, alerting, and infrastructure-as-code security controls.
+The final architecture uses segmented networking, private application servers behind an Application Load Balancer, IAM-based administration, centralized logging and monitoring, GuardDuty threat detection, SNS alerting, AWS WAF protection, and automated infrastructure-as-code security checks.
 
-Later in the project, I will perform a controlled security simulation and use AWS security telemetry to investigate the change and restore the secure configuration through Terraform.
+A controlled security misconfiguration was introduced into the lab environment, investigated through AWS CloudTrail, and remediated through Terraform.
 
 ---
 

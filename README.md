@@ -6,6 +6,8 @@ The project was built as a hands-on cloud security lab and includes a controlled
 
 ## Architecture
 
+![Secure AWS Cloud Environment Architecture](docs/architecture/aws-security-architecture.png)
+
 The environment uses a segmented AWS architecture designed to keep application workloads private while exposing only the required public entry point.
 
 ### Traffic Flow
@@ -78,6 +80,12 @@ This provides an additional security layer before traffic reaches the applicatio
 
 A controlled cloud security incident was performed to demonstrate detection, investigation, and remediation.
 
+### Full Incident Report
+
+A detailed incident report covering the security event, detection gap, investigation, impact, remediation, validation, and lessons learned is available here:
+
+[View the Security Incident Report](security/incident-report.md)
+
 ### Incident
 
 The EC2 application security group was intentionally changed through Terraform from:
@@ -127,6 +135,8 @@ GitHub Actions automatically performs security and configuration checks against 
 
 The pipeline runs on pushes to the main branch and pull requests.
 
+Checkov findings remain visible in the CI pipeline but currently use soft-fail behavior, meaning security findings are reported for review without automatically failing the workflow or blocking merges.
+
 ### Automated Checks
 
 - Terraform Format Check
@@ -150,11 +160,11 @@ terraform/
 │   └── dev/
 └── modules/
     ├── compute/
+    ├── iam/
     ├── monitoring/
-    ├── network/
     ├── security/
-    └── waf/
-
+    └── vpc/
+    
 
 This separates infrastructure responsibilities and makes the environment easier to maintain and expand.
 
@@ -200,6 +210,25 @@ This separates infrastructure responsibilities and makes the environment easier 
 - Infrastructure remediation
 - Configuration drift prevention
 
+## Known Limitations and Production Improvements
+
+This project was designed as a security-focused lab environment rather than a production deployment. Several architectural decisions were made to balance security objectives, project scope, and AWS cost.
+
+For a production environment, additional improvements would include:
+
+- Enforcing HTTPS using an ACM certificate and redirecting HTTP traffic to HTTPS
+- Enabling Application Load Balancer access logging
+- Enabling AWS WAF logging for additional visibility into web requests
+- Using customer-managed KMS keys where stronger encryption control is required
+- Further restricting security group egress rules based on application requirements
+- Increasing CloudWatch log retention based on organizational compliance requirements
+- Implementing additional AWS Config rules for continuous configuration monitoring
+- Adding policy-as-code controls to prevent prohibited infrastructure configurations before deployment
+- Enforcing pull request reviews and branch protection for Terraform changes
+- Configuring Checkov to block CI/CD when defined high-severity security policies fail
+
+These improvements represent potential next steps for evolving the lab architecture toward a production-ready cloud security environment.
+
 ## Project Documentation
 
 Detailed implementation notes and evidence are available in:
@@ -209,6 +238,18 @@ docs/build-notes.md
 Screenshots documenting the build, security controls, monitoring, incident simulation, investigation, remediation, and CI/CD pipeline are stored in:
 
 docs/screenshots/
+
+### Key Evidence
+
+Selected screenshots demonstrating the security implementation and incident-response workflow:
+
+- [Controlled incident Terraform change](docs/screenshots/29-change-alb-security-group.png)
+- [CloudTrail incident investigation](docs/screenshots/30-cloudtrail-security-group-incident.png)
+- [Live insecure security group configuration](docs/screenshots/31-live-aws-config-with-insecure-state.png)
+- [Remediated security group](docs/screenshots/32-security-group-remediated.png)
+- [GitHub Actions security pipeline](docs/screenshots/34-github-actions-security-pipeline-success.png)
+
+The complete screenshot collection is available in [docs/screenshots](docs/screenshots/).
 
 ## Key Takeaways
 
