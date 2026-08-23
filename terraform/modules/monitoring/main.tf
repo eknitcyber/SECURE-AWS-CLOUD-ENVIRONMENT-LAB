@@ -164,7 +164,7 @@ resource "aws_cloudwatch_log_metric_filter" "unauthorized_api_calls" {
 resource "aws_cloudwatch_metric_alarm" "unauthorized_api_calls" {
   alarm_name          = "${var.project_name}-unauthorized-api-calls"
   alarm_description   = "Alarm when unauthorized AWS API calls are detected"
-  alarm_actions = [aws_sns_topic.security_alerts.arn]
+  alarm_actions       = [aws_sns_topic.security_alerts.arn]
   namespace           = "SecurityMetrics"
   metric_name         = "UnauthorizedAPICalls"
   statistic           = "Sum"
