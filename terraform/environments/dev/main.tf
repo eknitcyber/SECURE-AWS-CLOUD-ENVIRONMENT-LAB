@@ -27,3 +27,10 @@ module "compute" {
   private_subnet_ids    = module.vpc.private_subnet_ids
   instance_profile_name = module.iam.instance_profile_name
 }
+
+module "monitoring" {
+  source = "../../modules/monitoring"
+
+  project_name = "secure-aws-terraform-lab"
+  aws_region   = "us-east-1"
+}

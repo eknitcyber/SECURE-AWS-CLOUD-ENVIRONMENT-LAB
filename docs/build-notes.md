@@ -328,3 +328,164 @@ Private EC2 → NAT Gateway → Internet Gateway → Internet
 The application servers are not directly exposed to internet clients, SSH is not publicly available, and the Application Load Balancer provides the controlled public entry point.
 
 The environment now provides a foundation for the next stages of the project, where I will add logging, monitoring, threat detection, alerting, WAF protection, and eventually a controlled security incident and Terraform-based remediation.
+
+---
+
+# Phase 4 - Centralized Logging and Security Monitoring
+
+### Monitoring Goal
+
+Added centralized logging and basic security monitoring to the environment so AWS activity can be recorded, retained, and used for detection.
+
+Up to this point, the project focused mainly on building and securing the infrastructure. This phase adds visibility into activity occurring within the AWS account.
+
+The monitoring flow is:
+
+AWS API Activity → CloudTrail → S3 + CloudWatch Logs → Metric Filter → CloudWatch Alarm
+
+This provides both an audit trail for investigation and a way to detect specific security-relevant activity.
+
+### AWS CloudTrail
+
+Created a multi-region AWS CloudTrail trail using Terraform.
+
+Configured CloudTrail to:
+
+* Record AWS management activity.
+* Include global service events.
+* Operate as a multi-region trail.
+* Deliver logs to a dedicated S3 bucket.
+* Send events to CloudWatch Logs for monitoring and detection.
+
+Using a multi-region trail provides broader visibility than monitoring only the region where the main application infrastructure is deployed.
+
+CloudTrail provides the audit layer for the environment by recording actions performed through the AWS Console, CLI, SDKs, and AWS APIs.
+
+### Secure CloudTrail Log Storage
+
+Created a dedicated S3 bucket for long-term CloudTrail log storage.
+
+Configured the bucket with:
+
+* Block Public Access enabled.
+* Server-side encryption using Amazon S3 managed keys (SSE-S3).
+* Bucket versioning enabled.
+* A bucket policy allowing the CloudTrail service to deliver audit logs.
+
+The bucket is not intended to serve public content. Its purpose is to preserve security and audit records, so public access is explicitly blocked.
+
+Encryption protects stored log data at rest, while versioning provides additional protection against accidental modification or deletion of log objects.
+
+### CloudTrail Log Validation
+
+Verified that CloudTrail is actively delivering logs to the S3 bucket.
+
+CloudTrail log objects were observed under the AWS logging structure:
+
+AWSLogs/<account-id>/CloudTrail/<region>/<year>/<month>/<day>/
+
+This confirmed that the trail was not only configured but was actively generating and storing audit records.
+
+### CloudWatch Logs Integration
+
+Created a dedicated CloudWatch Log Group for CloudTrail:
+
+/aws/cloudtrail/secure-aws-terraform-lab
+
+Configured a 30-day retention period for the log group.
+
+An IAM role was created allowing CloudTrail to assume the required role and publish events into CloudWatch Logs.
+
+S3 and CloudWatch serve different purposes in the logging design:
+
+* S3 provides durable storage of the CloudTrail audit records.
+* CloudWatch Logs makes the events available for monitoring, filtering, and detection.
+
+This allows the same AWS activity to support both long-term investigation and near-real-time security monitoring.
+
+### Unauthorized API Call Detection
+
+Created a CloudWatch Logs metric filter to identify unsuccessful AWS API calls associated with authorization failures.
+
+The filter monitors CloudTrail events for error codes including:
+
+UnauthorizedOperation
+
+and
+
+AccessDenied
+
+Matching events are converted into the custom CloudWatch metric:
+
+SecurityMetrics / UnauthorizedAPICalls
+
+This turns relevant CloudTrail log events into measurable security data that CloudWatch can evaluate.
+
+### CloudWatch Security Alarm
+
+Created a CloudWatch alarm for the UnauthorizedAPICalls metric.
+
+The alarm is configured to evaluate the sum of detected unauthorized API calls over a five-minute period.
+
+The threshold is:
+
+UnauthorizedAPICalls >= 1
+
+This means a single matching authorization failure within the evaluation period is enough to move the alarm into an alarm state.
+
+Missing data is treated as non-breaching so the alarm does not generate an alert simply because no unauthorized activity has occurred.
+
+At this stage, the alarm provides detection inside CloudWatch. Notification delivery will be added separately so security detections can generate external alerts.
+
+### Infrastructure as Code
+
+Implemented the Phase 4 monitoring infrastructure as a reusable Terraform module.
+
+The monitoring module manages:
+
+* CloudTrail.
+* CloudTrail S3 storage.
+* S3 public access controls.
+* S3 encryption.
+* S3 versioning.
+* CloudTrail bucket permissions.
+* CloudWatch Logs.
+* CloudTrail-to-CloudWatch IAM permissions.
+* CloudWatch metric filtering.
+* CloudWatch security alarming.
+
+Terraform deployed 11 new resources without modifying or destroying the existing network and application infrastructure.
+
+### Phase 4 Validation
+
+Verified that:
+
+* The CloudTrail trail is actively logging.
+* CloudTrail is configured as a multi-region trail.
+* CloudTrail delivers events to both S3 and CloudWatch Logs.
+* CloudTrail log files are present in the S3 bucket.
+* Public access is blocked on the CloudTrail S3 bucket.
+* S3 server-side encryption is enabled.
+* S3 bucket versioning is enabled.
+* The CloudWatch Log Group uses a defined retention period.
+* The unauthorized API call metric filter is configured.
+* Matching events generate the UnauthorizedAPICalls security metric.
+* The CloudWatch alarm monitors that metric using the configured threshold.
+
+### Phase 4 Outcome
+
+The environment now has a centralized audit and monitoring layer.
+
+Instead of relying only on the current configuration of AWS resources, activity within the environment is now recorded and can be evaluated for security-relevant behavior.
+
+The monitoring path is:
+
+AWS Activity → CloudTrail → S3
+
+for retained audit evidence, and:
+
+AWS Activity → CloudTrail → CloudWatch Logs → Metric Filter → Alarm
+
+for security monitoring.
+
+This establishes the visibility needed for later threat detection, alerting, controlled security testing, and incident investigation phases of the project.
