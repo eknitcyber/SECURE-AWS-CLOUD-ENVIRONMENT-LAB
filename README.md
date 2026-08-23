@@ -155,6 +155,7 @@ The CI pipeline performs validation and security analysis only. It does not auto
 
 The infrastructure is organized into reusable Terraform modules.
 
+```text
 terraform/
 ├── environments/
 │   └── dev/
@@ -164,7 +165,7 @@ terraform/
     ├── monitoring/
     ├── security/
     └── vpc/
-    
+```
 
 This separates infrastructure responsibilities and makes the environment easier to maintain and expand.
 
