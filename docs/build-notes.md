@@ -177,7 +177,7 @@ The ALB gives users one public application endpoint while keeping the individual
 
 I separated the load-balancing and application layers using two security groups.
 
-### ALB Security Group
+## ALB Security Group
 
 The ALB accepts:
 
@@ -185,7 +185,7 @@ HTTP / TCP / 80 ← 0.0.0.0/0
 
 The ALB is intentionally internet-facing because it is the public entry point to the application.
 
-### Application Security Group
+## Application Security Group
 
 The private EC2 instances accept:
 
@@ -255,7 +255,7 @@ Understanding that tradeoff was useful because architecture decisions are not on
 
 I verified the final Phase 3 environment at multiple layers rather than relying only on a successful Terraform deployment.
 
-### Compute
+## Compute
 
 Confirmed two t3.micro application instances are running across:
 
@@ -264,11 +264,11 @@ Confirmed two t3.micro application instances are running across:
 
 Both application servers use private addressing.
 
-### Load Balancing
+## Load Balancing
 
 Confirmed both EC2 instances are registered with the target group and report healthy on port 80.
 
-### Network Security
+## Network Security
 
 Confirmed the ALB and application servers use separate security groups.
 
@@ -276,13 +276,13 @@ The ALB accepts public HTTP traffic while the application security group accepts
 
 No public SSH rule exists.
 
-### Private Networking
+## Private Networking
 
 Confirmed the NAT Gateway is available and provides the private subnets with outbound connectivity.
 
 The EC2 application servers remain without public IP addresses.
 
-### Application
+## Application
 
 I accessed the application through the ALB DNS name rather than connecting directly to an EC2 instance.
 
@@ -333,7 +333,7 @@ The environment now provides a foundation for the next stages of the project, wh
 
 # Phase 4 - Centralized Logging and Security Monitoring
 
-### Monitoring Goal
+## Monitoring Goal
 
 Added centralized logging and basic security monitoring to the environment so AWS activity can be recorded, retained, and used for detection.
 
@@ -345,7 +345,7 @@ AWS API Activity → CloudTrail → S3 + CloudWatch Logs → Metric Filter → C
 
 This provides both an audit trail for investigation and a way to detect specific security-relevant activity.
 
-### AWS CloudTrail
+## AWS CloudTrail
 
 Created a multi-region AWS CloudTrail trail using Terraform.
 
@@ -361,7 +361,7 @@ Using a multi-region trail provides broader visibility than monitoring only the 
 
 CloudTrail provides the audit layer for the environment by recording actions performed through the AWS Console, CLI, SDKs, and AWS APIs.
 
-### Secure CloudTrail Log Storage
+## Secure CloudTrail Log Storage
 
 Created a dedicated S3 bucket for long-term CloudTrail log storage.
 
@@ -376,7 +376,7 @@ The bucket is not intended to serve public content. Its purpose is to preserve s
 
 Encryption protects stored log data at rest, while versioning provides additional protection against accidental modification or deletion of log objects.
 
-### CloudTrail Log Validation
+## CloudTrail Log Validation
 
 Verified that CloudTrail is actively delivering logs to the S3 bucket.
 
@@ -386,7 +386,7 @@ AWSLogs/<account-id>/CloudTrail/<region>/<year>/<month>/<day>/
 
 This confirmed that the trail was not only configured but was actively generating and storing audit records.
 
-### CloudWatch Logs Integration
+## CloudWatch Logs Integration
 
 Created a dedicated CloudWatch Log Group for CloudTrail:
 
@@ -403,7 +403,7 @@ S3 and CloudWatch serve different purposes in the logging design:
 
 This allows the same AWS activity to support both long-term investigation and near-real-time security monitoring.
 
-### Unauthorized API Call Detection
+## Unauthorized API Call Detection
 
 Created a CloudWatch Logs metric filter to identify unsuccessful AWS API calls associated with authorization failures.
 
@@ -421,7 +421,7 @@ SecurityMetrics / UnauthorizedAPICalls
 
 This turns relevant CloudTrail log events into measurable security data that CloudWatch can evaluate.
 
-### CloudWatch Security Alarm
+## CloudWatch Security Alarm
 
 Created a CloudWatch alarm for the UnauthorizedAPICalls metric.
 
@@ -437,7 +437,7 @@ Missing data is treated as non-breaching so the alarm does not generate an alert
 
 At this stage, the alarm provides detection inside CloudWatch. Notification delivery will be added separately so security detections can generate external alerts.
 
-### Infrastructure as Code
+## Infrastructure as Code
 
 Implemented the Phase 4 monitoring infrastructure as a reusable Terraform module.
 
@@ -456,7 +456,7 @@ The monitoring module manages:
 
 Terraform deployed 11 new resources without modifying or destroying the existing network and application infrastructure.
 
-### Phase 4 Validation
+## Phase 4 Validation
 
 Verified that:
 
@@ -472,7 +472,7 @@ Verified that:
 * Matching events generate the UnauthorizedAPICalls security metric.
 * The CloudWatch alarm monitors that metric using the configured threshold.
 
-### Phase 4 Outcome
+## Phase 4 Outcome
 
 The environment now has a centralized audit and monitoring layer.
 
@@ -494,7 +494,7 @@ This establishes the visibility needed for later threat detection, alerting, con
 
 # Phase 5 - Managed Threat Detection
 
-### Threat Detection Goal
+## Threat Detection Goal
 
 Added Amazon GuardDuty as the managed threat detection layer for the AWS environment.
 
@@ -502,7 +502,7 @@ Phase 4 established the ability to record AWS activity and detect specific event
 
 This extends the security architecture from collecting and monitoring activity to actively looking for suspicious patterns.
 
-### Amazon GuardDuty
+## Amazon GuardDuty
 
 Enabled Amazon GuardDuty using Terraform.
 
@@ -510,7 +510,7 @@ A GuardDuty detector was added to the existing monitoring module so threat detec
 
 The detector is enabled in the same AWS region as the lab environment.
 
-### Detection Approach
+## Detection Approach
 
 GuardDuty provides managed threat detection without requiring custom detection rules for every possible threat.
 
@@ -529,7 +529,7 @@ Using both approaches provides two different types of visibility:
 
 This separation helped reinforce that centralized logging and threat detection are related but are not the same security control.
 
-### Findings and Severity
+## Findings and Severity
 
 GuardDuty findings are categorized by severity, allowing detected activity to be prioritized for investigation.
 
@@ -544,7 +544,7 @@ At the time of validation, the environment had no active GuardDuty findings.
 
 This is expected for the current state of the lab. GuardDuty is enabled so future suspicious activity can be surfaced as findings rather than requiring every event to be manually identified from raw logs.
 
-### Infrastructure as Code
+## Infrastructure as Code
 
 GuardDuty was enabled through the Terraform monitoring module using an aws_guardduty_detector resource.
 
@@ -556,7 +556,7 @@ No existing network, compute, logging, or application resources needed to be mod
 
 Keeping GuardDuty in Terraform also means its enabled state is documented alongside the rest of the security architecture and can be recreated during future deployments.
 
-### Phase 5 Validation
+## Phase 5 Validation
 
 Verified that:
 
@@ -568,7 +568,7 @@ Verified that:
 * GuardDuty can be suspended or disabled from its current active state.
 * Existing infrastructure remained unchanged during deployment.
 
-### Phase 5 Outcome
+## Phase 5 Outcome
 
 The environment now includes managed threat detection in addition to centralized logging and custom CloudWatch monitoring.
 
@@ -594,7 +594,7 @@ The next step is to add an alerting path so important security detections can be
 
 # Phase 6 - Security Alerting
 
-### Alerting Goal
+## Alerting Goal
 
 Extended the monitoring environment so security detections can generate notifications outside the AWS Console.
 
@@ -602,7 +602,7 @@ The previous monitoring phases provided centralized logging, custom detection, C
 
 The goal of this phase was to create a notification path that can bring a detected event to my attention automatically.
 
-### Amazon SNS
+## Amazon SNS
 
 Created an Amazon SNS topic through Terraform named:
 
@@ -612,7 +612,7 @@ The SNS topic acts as the notification layer between security monitoring service
 
 This separates detection from notification. CloudWatch determines when the monitored condition has been met, while SNS handles delivery of the resulting alert.
 
-### CloudWatch Alarm Integration
+## CloudWatch Alarm Integration
 
 Updated the existing unauthorized API call CloudWatch alarm to use the SNS topic as an alarm action.
 
@@ -624,7 +624,7 @@ The alarm is configured to notify the SNS topic when it enters the ALARM state.
 
 This means activity matching the existing AccessDenied or UnauthorizedOperation detection can result in an external notification rather than remaining visible only within CloudWatch.
 
-### Email Subscription
+## Email Subscription
 
 Created an email subscription to the SNS security alerts topic.
 
@@ -634,7 +634,7 @@ The local variable file is excluded from Git version control. This keeps the per
 
 The SNS email subscription was manually confirmed through the AWS confirmation email before it could receive notifications.
 
-### Alert Validation
+## Alert Validation
 
 I wanted to verify the notification path itself rather than assuming that a configured SNS action meant alerts would successfully reach their destination.
 
@@ -654,7 +654,7 @@ The received notification included the alarm name, state change, reason for the 
 
 This provided end-to-end confirmation that the alerting path was functioning.
 
-### Security Design Decisions
+## Security Design Decisions
 
 I kept the detection and notification components separate.
 
@@ -664,7 +664,7 @@ I also avoided committing the notification email address to GitHub by passing it
 
 For testing, I changed the alarm state directly instead of creating suspicious AWS activity. This allowed the notification pipeline to be validated without weakening the environment or generating unnecessary security events.
 
-### Phase 6 Validation
+## Phase 6 Validation
 
 Verified that:
 
@@ -678,7 +678,7 @@ Verified that:
 * A controlled alarm-state test successfully triggered SNS.
 * The resulting CloudWatch alarm notification was successfully received by email.
 
-### Phase 6 Outcome
+## Phase 6 Outcome
 
 The environment now has an external notification path for security monitoring.
 
@@ -773,3 +773,272 @@ The public application entry point now has application-layer filtering in additi
 The security model has progressed from relying only on network segmentation and security groups to inspecting web requests before they reach the application infrastructure.
 
 AWS WAF is managed through Terraform and attached directly to the Application Load Balancer, keeping the protection reproducible and version controlled.
+
+---
+
+# Phase 8 - Controlled Security Incident Simulation
+
+## Objective
+Simulate a realistic cloud security misconfiguration in a controlled environment so the change could be investigated and remediated using the security controls built throughout the project.
+
+## Scenario
+The application EC2 security group was originally configured to accept HTTP traffic on port 80 only from the Application Load Balancer security group.
+
+To simulate a security incident, the Terraform configuration was temporarily modified to replace the restricted ALB source with:
+
+- Protocol: TCP
+- Port: 80
+- Source: 0.0.0.0/0
+- Description: TEMP INCIDENT - overly permissive HTTP
+
+This intentionally exposed the application security group to HTTP traffic from any IPv4 address.
+
+## Terraform Change
+The controlled misconfiguration was introduced through Terraform rather than manually changing the AWS resource.
+
+Before applying the change, terraform plan showed:
+
+Plan: 0 to add, 1 to change, 0 to destroy.
+
+The plan showed the existing ALB-only ingress rule being removed and replaced with the temporary 0.0.0.0/0 rule.
+
+## Deployment
+The Terraform change was applied to the AWS environment.
+
+After deployment, the EC2 security group was inspected through the AWS Management Console.
+
+The application security group showed:
+
+- Type: HTTP
+- Protocol: TCP
+- Port: 80
+- Source: 0.0.0.0/0
+- Description: TEMP INCIDENT - overly permissive HTTP
+
+This confirmed that the insecure configuration was active in the AWS environment.
+
+## Security Impact
+The intended architecture restricts application traffic so that EC2 instances receive HTTP requests only through the Application Load Balancer.
+
+Changing the source to 0.0.0.0/0 removed that restriction and created an overly permissive network rule.
+
+This represented a realistic cloud configuration incident involving excessive network exposure.
+
+## Evidence
+- 29-change-alb-security-group.png - Terraform plan showing the intentional security group modification
+- 31-live-aws-config-with-insecure-state.png - AWS console confirming the insecure rule was active
+
+## Result
+A controlled security incident was successfully created using Terraform and verified in AWS.
+
+The environment was intentionally left in the insecure state only long enough to perform the investigation in Phase 9 before remediation.
+
+---
+
+# Phase 9 - Incident Investigation
+
+## Objective
+
+Investigate the intentionally introduced security group misconfiguration using AWS CloudTrail and determine what changed, how the change occurred, and whether the existing monitoring controls detected it.
+
+## Investigation
+
+During Phase 8, the application security group was intentionally modified so HTTP traffic on port 80 was allowed from 0.0.0.0/0 instead of only from the Application Load Balancer security group.
+
+AWS CloudTrail Event History was used to investigate the configuration change.
+
+CloudTrail recorded an AuthorizeSecurityGroupIngress API event associated with the application security group.
+
+The event showed:
+
+- Event source: ec2.amazonaws.com
+
+- Event name: AuthorizeSecurityGroupIngress
+
+- AWS Region: us-east-1
+
+- Protocol: TCP
+
+- Port: 80
+
+- Source CIDR: 0.0.0.0/0
+
+- Description: TEMP INCIDENT - overly permissive HTTP
+
+- The user agent showed that Terraform performed the change
+
+This provided an audit trail showing both the configuration change and the method used to make it.
+
+## Security Analysis
+
+The CloudTrail event confirmed that an ingress rule allowing HTTP traffic from any IPv4 address had been successfully authorized.
+
+The intended architecture restricts the application security group so HTTP traffic is accepted only from the Application Load Balancer security group.
+
+Changing the source to 0.0.0.0/0 violated this restriction and created an unnecessarily broad network rule.
+
+Although the EC2 instances remained in private subnets without public IP addresses, the security group configuration itself no longer followed the intended least-access design.
+
+## Detection Analysis
+
+The existing CloudWatch security alarm remained in the OK state during the incident.
+
+The CloudWatch metric filter created earlier in the project specifically monitors AWS API calls that return authorization errors such as:
+
+- AccessDenied
+
+- UnauthorizedOperation
+
+The security group modification was performed using valid AWS permissions and the API request succeeded. Because the action was authorized, it did not match the existing unauthorized API call detection.
+
+This exposed an important limitation in the monitoring design: an action can be authorized by AWS while still creating an insecure configuration.
+
+Monitoring only failed or unauthorized API calls is therefore not enough to detect every security-relevant infrastructure change.
+
+## Investigation Findings
+
+The investigation determined that:
+
+- The application security group was modified.
+
+- HTTP port 80 was opened to 0.0.0.0/0.
+
+- The change was successfully authorized by AWS.
+
+- Terraform was used to perform the modification.
+
+- CloudTrail recorded the configuration change.
+
+- The existing unauthorized API alarm did not detect the event.
+
+- The insecure configuration violated the intended ALB-only access model.
+
+- Additional detection controls would be required to automatically alert on successful but risky security group changes.
+
+## Evidence
+
+- 29-change-alb-security-group.png - Terraform plan showing the intentional insecure configuration
+
+- 30-cloudtrail-security-group-incident.png - CloudTrail record of the security group modification
+
+- 31-live-aws-config-with-insecure-state.png - AWS console showing the insecure rule active
+
+## Result
+
+CloudTrail provided the audit evidence needed to reconstruct and understand the security event.
+
+The investigation identified what changed, which resource was affected, how the change was performed, and why the existing CloudWatch alarm did not detect it.
+
+This phase demonstrated the difference between logging an event and detecting a security condition. CloudTrail successfully recorded the activity, but the existing detection logic was not designed to identify authorized configuration changes.
+
+The findings from the investigation provided the information needed to remediate the security group through Terraform in Phase 10.
+
+---
+
+# Phase 10 - Terraform Remediation and Recovery
+
+## Objective
+
+Remediate the security group misconfiguration identified during the incident investigation and restore the application tier to its intended secure configuration using Terraform.
+
+The goal was to correct the issue through infrastructure as code rather than manually changing the security group through the AWS Management Console.
+
+## Remediation
+
+The temporary security group rule introduced during Phase 8 allowed HTTP traffic on port 80 from 0.0.0.0/0.
+
+The Terraform configuration was changed back to the original secure design.
+
+The application security group was restored to:
+
+- Protocol: TCP
+
+- Port: 80
+
+- Source: Application Load Balancer security group
+
+- Description: Allow HTTP only from ALB
+
+This removed the overly permissive internet-wide source and restored the intended relationship between the public load-balancing tier and the private application tier.
+
+## Terraform Remediation
+
+Before applying the remediation, terraform plan showed:
+
+Plan: 0 to add, 1 to change, 0 to destroy.
+
+The plan showed that Terraform would remove the temporary 0.0.0.0/0 ingress configuration and restore the Application Load Balancer security group as the only permitted source for HTTP traffic.
+
+The remediation was then applied through Terraform.
+
+No manual security group modification was performed through the AWS Console.
+
+## Security Validation
+
+After the Terraform apply completed, the application security group was inspected through the AWS Management Console.
+
+The inbound configuration showed:
+
+- Type: HTTP
+
+- Protocol: TCP
+
+- Port: 80
+
+- Source: Application Load Balancer security group
+
+- Description: Allow HTTP only from ALB
+
+The temporary 0.0.0.0/0 rule was no longer present.
+
+This confirmed that the application tier had returned to its intended network security configuration.
+
+## Terraform State Validation
+
+A final terraform plan was executed after remediation.
+
+Terraform reported:
+
+No changes. Your infrastructure matches the configuration.
+
+This confirmed that the deployed AWS infrastructure and the Terraform configuration were synchronized again after the incident.
+
+## Remediation Approach
+
+Using Terraform for the remediation preserved infrastructure as code as the authoritative definition of the environment.
+
+Manually fixing the security group in AWS could have corrected the immediate issue, but the insecure configuration would still have existed in the Terraform code and could have been redeployed later.
+
+Correcting the Terraform configuration first ensured that both the deployed resource and the infrastructure definition returned to the secure state.
+
+## Security Outcome
+
+The intended traffic path was restored to:
+
+Internet → AWS WAF → Application Load Balancer → Private EC2 Instances
+
+The application security group once again accepts HTTP traffic only from the Application Load Balancer security group.
+
+The controlled incident demonstrated that a security configuration could be changed, investigated through CloudTrail, analyzed against existing monitoring controls, and remediated through infrastructure as code.
+
+## Evidence
+
+- 30-cloudtrail-security-group-incident.png - CloudTrail evidence used during the investigation
+
+- 31-live-aws-config-with-insecure-state.png - Application security group before remediation
+
+- 32-security-group-remediated.png - Application security group after Terraform remediation
+
+## Phase 10 Outcome
+
+The controlled incident lifecycle was completed successfully.
+
+The project demonstrated:
+
+BUILD → SECURE → MONITOR → TEST → DETECT → INVESTIGATE → REMEDIATE
+
+The insecure security group configuration was identified through CloudTrail investigation and corrected through Terraform.
+
+The final terraform plan confirmed that no configuration drift remained and that the environment had returned to its intended secure baseline.
+
+---
