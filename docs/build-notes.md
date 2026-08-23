@@ -1042,3 +1042,155 @@ The insecure security group configuration was identified through CloudTrail inve
 The final terraform plan confirmed that no configuration drift remained and that the environment had returned to its intended secure baseline.
 
 ---
+
+# Phase 11 - CI/CD Security Pipeline
+
+## Objective
+
+Implement an automated CI/CD security pipeline for the Terraform infrastructure so configuration quality and security checks run automatically whenever infrastructure code is pushed to the main branch or submitted through a pull request.
+
+The pipeline was implemented using GitHub Actions.
+
+## GitHub Actions Workflow
+
+A GitHub Actions workflow was created at:
+
+.github/workflows/terraform-security.yml
+
+The workflow was configured to execute automatically on:
+
+- Pushes to the main branch
+
+- Pull requests
+
+This provides automated validation of Terraform changes before they are accepted into the infrastructure codebase.
+
+## Automated Terraform Checks
+
+The pipeline performs several automated checks against the Terraform configuration.
+
+The workflow includes:
+
+- Terraform Format Check
+
+- Terraform Init
+
+- Terraform Validate
+
+- TFLint
+
+- Checkov
+
+Each tool provides a different layer of infrastructure validation and security analysis.
+
+## Terraform Format Check
+
+Terraform fmt is used to verify that the Terraform configuration follows standardized formatting.
+
+During the initial CI run, the format check identified formatting issues in the compute and monitoring modules.
+
+The affected files were reformatted locally using Terraform and committed back to the repository.
+
+This demonstrated that the CI pipeline could detect configuration-quality issues automatically.
+
+## Terraform Validation
+
+Terraform init is executed with the backend disabled so the CI environment can initialize the Terraform configuration without accessing the live Terraform state.
+
+Terraform validate then checks the configuration for syntax and internal consistency.
+
+The validation completed successfully without requiring AWS credentials or deploying infrastructure.
+
+## TFLint
+
+TFLint was integrated into the pipeline to perform Terraform-specific linting.
+
+The initial workflow configuration exposed a compatibility issue with the installed TFLint version because positional directory arguments were no longer supported.
+
+The workflow was corrected to use the supported chdir configuration.
+
+After the correction, TFLint completed successfully.
+
+## Checkov Security Scanning
+
+Checkov was integrated to perform static security analysis against the Terraform infrastructure.
+
+The scan identified multiple infrastructure-hardening recommendations, including controls related to:
+
+- HTTPS and TLS
+
+- EC2 storage encryption
+
+- Application Load Balancer security settings
+
+- Security group ingress and egress
+
+- Logging and monitoring
+
+- Additional production-hardening controls
+
+The findings were reviewed rather than automatically modifying the infrastructure solely to satisfy the scanner.
+
+## Risk-Based Finding Review
+
+One Checkov recommendation identified encryption of the EC2 root volumes.
+
+The proposed Terraform change was tested with terraform plan before deployment.
+
+Terraform showed that enabling the setting on the existing instances would require replacement of the EC2 resources and their target group attachments.
+
+Because this would unnecessarily destroy and recreate working infrastructure late in the project, the change was not applied.
+
+The Terraform configuration was restored and terraform plan confirmed that no infrastructure changes remained.
+
+This demonstrated the importance of reviewing automated security recommendations based on operational impact rather than applying scanner recommendations blindly.
+
+## Checkov CI Behavior
+
+Checkov remained enabled so security findings continue to be visible during automated scans.
+
+The workflow was configured with soft-fail behavior so documented or lab-specific findings do not prevent the entire CI pipeline from completing successfully.
+
+This preserves visibility into security recommendations while allowing intentional design decisions and future hardening opportunities to be evaluated separately.
+
+## Pipeline Validation
+
+After correcting the formatting and TFLint issues, the GitHub Actions workflow completed successfully.
+
+The final automated pipeline successfully executed:
+
+Terraform Format Check → Terraform Init → Terraform Validate → TFLint → Checkov
+
+The complete GitHub Actions job finished successfully, demonstrating that Terraform changes can now be automatically checked whenever the workflow is triggered.
+
+## Security Benefit
+
+The CI/CD pipeline introduces automated security and configuration analysis into the infrastructure development lifecycle.
+
+Instead of relying entirely on manual review, Terraform changes can now be automatically evaluated for:
+
+- Formatting problems
+
+- Invalid Terraform configuration
+
+- Terraform linting issues
+
+- Infrastructure security weaknesses
+
+The pipeline performs analysis only and does not automatically deploy infrastructure or require AWS credentials.
+
+## Evidence
+
+- 33-github-actions-security-workflow.png - GitHub Actions workflow configuration showing the automated Terraform validation, TFLint, and Checkov stages
+
+- 34-github-actions-security-pipeline-success.png - Successful GitHub Actions job showing all Terraform, TFLint, and Checkov stages completing successfully
+
+## Phase 11 Outcome
+
+An automated infrastructure security pipeline was successfully integrated into the project using GitHub Actions.
+
+The pipeline validates Terraform configuration, performs linting, runs static infrastructure security analysis, and provides repeatable security feedback for future code changes.
+
+The implementation also demonstrated a practical DevSecOps workflow by detecting real formatting and configuration issues during development, correcting the pipeline, reviewing security findings, and validating the final automated process.
+
+---
